@@ -21,7 +21,9 @@ public static class LLMHelper
             if (string.IsNullOrEmpty(apiKey))
                 return;
 
-            var llm = new OpenAIProvider(apiKey, providerConfig.Endpoint);
+            var execution = platformConfig.Platform.Execution;
+            var llm = new OpenAIProvider(apiKey, providerConfig.Endpoint,
+                execution.RetryAttempts, execution.RetryDelaySeconds);
             agent.LlmProcessor = async (systemPrompt, userPrompt, model, temperature, maxTokens, ct) =>
             {
                 var request = new LLMRequest(systemPrompt, userPrompt,

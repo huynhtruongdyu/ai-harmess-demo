@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,13 +10,18 @@ public class OpenAIProvider : ILLMProvider
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
     private readonly string _endpoint;
+    private readonly int _maxRetries;
+    private readonly int _baseDelaySeconds;
 
     public string Name => "openai";
 
-    public OpenAIProvider(string apiKey, string? endpoint = null)
+    public OpenAIProvider(string apiKey, string? endpoint = null,
+        int maxRetries = 3, int baseDelaySeconds = 30)
     {
         _apiKey = apiKey;
         _endpoint = endpoint ?? "https://api.openai.com/v1";
+        _maxRetries = maxRetries;
+        _baseDelaySeconds = baseDelaySeconds;
         _httpClient = new HttpClient();
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
     }
@@ -33,27 +39,57 @@ public class OpenAIProvider : ILLMProvider
         var json = JsonSerializer.Serialize(payload);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync($"{_endpoint}/chat/completions", content, ct);
-        response.EnsureSuccessStatusCode();
+        var attempt = 0;
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
 
-        var responseJson = await response.Content.ReadAsStringAsync(ct);
-        var result = JsonSerializer.Deserialize<OpenAIResponse>(responseJson);
+            var response = await _httpClient.PostAsync($"{_endpoint}/chat/completions", content, ct);
 
-        if (result?.Choices == null || result.Choices.Length == 0)
-            throw new InvalidOperationException("OpenAI returned no choices.");
+            if (response.IsSuccessStatusCode)
+            {
+                var responseJson = await response.Content.ReadAsStringAsync(ct);
+                var result = JsonSerializer.Deserialize<OpenAIResponse>(responseJson);
 
-        var choice = result.Choices[0];
+                if (result?.Choices == null || result.Choices.Length == 0)
+                    throw new InvalidOperationException("OpenAI returned no choices.");
 
-        return new LLMResponse(
-            choice.Message?.Content ?? "",
-            result.Model ?? "unknown",
-            result.Usage?.PromptTokens ?? 0,
-            result.Usage?.CompletionTokens ?? 0,
-            choice.Message?.ToolCalls?
-                .Select(tc => new ToolCall(tc.Id ?? "", tc.Function?.Name ?? "", tc.Function?.Arguments ?? ""))
-                .ToList()
-                .AsReadOnly()
-        );
+                var choice = result.Choices[0];
+
+                return new LLMResponse(
+                    choice.Message?.Content ?? "",
+                    result.Model ?? "unknown",
+                    result.Usage?.PromptTokens ?? 0,
+                    result.Usage?.CompletionTokens ?? 0,
+                    choice.Message?.ToolCalls?
+                        .Select(tc => new ToolCall(tc.Id ?? "", tc.Function?.Name ?? "", tc.Function?.Arguments ?? ""))
+                        .ToList()
+                        .AsReadOnly()
+                );
+            }
+
+            if (response.StatusCode != HttpStatusCode.TooManyRequests
+                && (int)response.StatusCode < 500)
+            {
+                response.EnsureSuccessStatusCode();
+            }
+
+            if (attempt >= _maxRetries)
+            {
+                var body = await response.Content.ReadAsStringAsync(ct);
+                throw new HttpRequestException(
+                    $"OpenAI API returned {(int)response.StatusCode} after {_maxRetries} retries: {body}");
+            }
+
+            attempt++;
+
+            var delay = response.Headers.RetryAfter?.Delta?.TotalSeconds is double retryAfter
+                ? retryAfter
+                : _baseDelaySeconds * Math.Pow(2, attempt - 1);
+
+            delay = Math.Min(delay, 120);
+            await Task.Delay(TimeSpan.FromSeconds(delay), ct);
+        }
     }
 
     private static List<object> BuildMessages(LLMRequest request)
