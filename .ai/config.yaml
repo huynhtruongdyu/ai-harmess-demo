@@ -7,7 +7,7 @@ platform:
   description: "Autonomous multi-agent software development platform"
 
   default_provider: "lmstudio"
-  default_model: "deepseek-coder-6.7b-instruct"
+  default_model: "google/gemma-4-e4b"
 
   execution:
     max_concurrent_agents: 5
@@ -45,5 +45,5 @@ providers:
   lmstudio:
     api_key: ""
     endpoint: "http://localhost:1234/v1"
-    default_model: "deepseek-coder-6.7b-instruct"
+    default_model: "google/gemma-4-e4b"
     context_length: 4096

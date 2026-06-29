@@ -23,7 +23,7 @@ public class LMStudioProvider : ILLMProvider
         _baseDelaySeconds = baseDelaySeconds;
         _contextLength = contextLength;
         _reservedForOutput = contextLength / 4;
-        _httpClient = new HttpClient();
+        _httpClient = new HttpClient { Timeout = System.Threading.Timeout.InfiniteTimeSpan };
     }
 
     public async Task<LLMResponse> CompleteAsync(LLMRequest request, CancellationToken ct = default)
