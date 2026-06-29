@@ -6,8 +6,8 @@ platform:
   version: "1.0.0"
   description: "Autonomous multi-agent software development platform"
 
-  default_provider: "gemini"
-  default_model: "gemini-flash-latest"
+  default_provider: "lmstudio"
+  default_model: "deepseek-coder-6.7b-instruct"
 
   execution:
     max_concurrent_agents: 5
@@ -41,3 +41,9 @@ providers:
     api_key: "${GEMINI_API_KEY:-}"
     endpoint: "https://generativelanguage.googleapis.com"
     default_model: "gemini-3.5-flash"
+
+  lmstudio:
+    api_key: ""
+    endpoint: "http://localhost:1234/v1"
+    default_model: "deepseek-coder-6.7b-instruct"
+    context_length: 4096

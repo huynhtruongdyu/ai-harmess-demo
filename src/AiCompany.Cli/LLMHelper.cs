@@ -21,19 +21,19 @@ public static class LLMHelper
             var apiKey = providerConfig.ApiKey
                 ?? Environment.GetEnvironmentVariable($"{providerName.ToUpperInvariant()}_API_KEY");
 
-            if (string.IsNullOrEmpty(apiKey))
+            if (string.IsNullOrEmpty(apiKey) && providerName != "lmstudio")
             {
                 Console.WriteLine($"  ⚠ No API key for provider '{providerName}'. Set {providerName.ToUpperInvariant()}_API_KEY env var.");
                 return;
             }
 
             var execution = platformConfig.Platform.Execution;
-            var llm = CreateProvider(providerName, apiKey, providerConfig.Endpoint,
-                execution.RetryAttempts, execution.RetryDelaySeconds);
+            var llm = CreateProvider(providerName, apiKey ?? "", providerConfig.Endpoint,
+                execution.RetryAttempts, execution.RetryDelaySeconds, providerConfig.ContextLength);
 
             if (llm == null)
             {
-                Console.WriteLine($"  ⚠ Unknown provider '{providerName}'. Supported: openai, gemini.");
+                Console.WriteLine($"  ⚠ Unknown provider '{providerName}'. Supported: openai, gemini, lmstudio.");
                 return;
             }
 
@@ -54,12 +54,13 @@ public static class LLMHelper
     }
 
     private static ILLMProvider? CreateProvider(string name, string apiKey, string? endpoint,
-        int maxRetries, int baseDelaySeconds)
+        int maxRetries, int baseDelaySeconds, int? contextLength = null)
     {
         return name.ToLowerInvariant() switch
         {
             "openai" => new OpenAIProvider(apiKey, endpoint, maxRetries, baseDelaySeconds),
             "gemini" => new GeminiProvider(apiKey, endpoint, maxRetries, baseDelaySeconds),
+            "lmstudio" => new LMStudioProvider(apiKey, endpoint, maxRetries, baseDelaySeconds, contextLength ?? 4096),
             _ => null
         };
     }

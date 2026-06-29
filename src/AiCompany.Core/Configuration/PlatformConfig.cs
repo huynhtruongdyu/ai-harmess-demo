@@ -105,4 +105,7 @@ public class ProviderConfig
 
     [YamlMember(Alias = "default_model")]
     public string? DefaultModel { get; init; }
+
+    [YamlMember(Alias = "context_length")]
+    public int? ContextLength { get; init; }
 }
