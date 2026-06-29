@@ -36,3 +36,7 @@ providers:
   openai:
     api_key: "${OPENAI_API_KEY}"
     endpoint: "https://api.openai.com/v1"
+
+  gemini:
+    api_key: "${GEMINI_API_KEY}"
+    endpoint: "https://generativelanguage.googleapis.com"
