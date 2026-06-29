@@ -134,7 +134,8 @@ public partial class ConfigLoader
         }
         catch (YamlDotNet.Core.YamlException ex)
         {
-            throw new ConfigException($"YAML parse error in {path}: {ex.Message}", ex);
+            var pos = $"at line {ex.Start.Line}, column {ex.Start.Column}";
+            throw new ConfigException($"YAML parse error in {path} {pos}: {ex.InnerException?.Message ?? ex.Message}", ex);
         }
     }
 }

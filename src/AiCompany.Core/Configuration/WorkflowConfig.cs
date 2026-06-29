@@ -77,7 +77,7 @@ public class WorkflowStep
     public string? Mode { get; init; }
 
     [YamlMember(Alias = "strategy")]
-    public Dictionary<string, string>? Strategy { get; init; }
+    public object? Strategy { get; init; }
 
     [YamlMember(Alias = "canary")]
     public Dictionary<string, object>? Canary { get; init; }

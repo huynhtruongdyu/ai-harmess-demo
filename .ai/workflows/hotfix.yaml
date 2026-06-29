@@ -27,7 +27,7 @@ steps:
       - Determine impact scope
       - Identify affected component
       - Assess if rollback is faster than fix
-      - Decide: rollback vs hotfix
+      - "Decide: rollback vs hotfix"
 
   - id: create_hotfix_branch
     agent: devops-engineer
@@ -36,7 +36,7 @@ steps:
     output: hotfix_branch.md
     constraints:
       - Branch from last known good commit (not main)
-      - Name pattern: hotfix/{issue-id}-{description}
+      - "Name pattern: hotfix/{issue-id}-{description}"
 
   - id: implement_hotfix
     agent: dynamic

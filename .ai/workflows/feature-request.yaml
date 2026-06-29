@@ -26,7 +26,7 @@ steps:
     output: feasibility_report.md
     constraints:
       - Technical feasibility assessment
-      - Effort estimate (T-shirt size: XS, S, M, L, XL, XXL)
+      - "Effort estimate (T-shirt size: XS, S, M, L, XL, XXL)"
       - Dependency identification
       - Risk assessment
 

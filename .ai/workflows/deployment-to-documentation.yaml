@@ -29,7 +29,7 @@ steps:
     constraints:
       - Follow Keep a Changelog format
       - Include PR references and issue numbers
-      - Categorize: Added, Changed, Fixed, Deprecated, Security
+      - "Categorize: Added, Changed, Fixed, Deprecated, Security"
 
   - id: update_api_docs
     agent: documentation-writer

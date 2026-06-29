@@ -14,8 +14,8 @@ steps:
     output: release_branch_created.md
     constraints:
       - Branch from main at designated commit
-      - Name pattern: release/v{version}
-      - Create release tag: v{version}-rc{number}
+      - "Name pattern: release/v{version}"
+      - "Create release tag: v{version}-rc{number}"
 
   - id: update_version
     agent: devops-engineer
@@ -44,7 +44,7 @@ steps:
     input: version_bumped.md
     output: regression_results.md
     constraints:
-      - Full test suite: unit, integration, E2E, performance
+      - "Full test suite: unit, integration, E2E, performance"
       - Coverage report generated
       - Performance benchmark comparison
 
@@ -83,7 +83,7 @@ steps:
     output: release_artifacts.md
     constraints:
       - Build all artifacts
-      - Tag release: v{version}
+      - "Tag release: v{version}"
       - Push to artifact registry
 
   - id: deploy_release
@@ -104,7 +104,7 @@ steps:
     output: release_monitoring_report.md
     constraints:
       - Monitor for 24 hours post-release
-      - Track: error rate, latency, traffic, business metrics
+      - "Track: error rate, latency, traffic, business metrics"
       - Alert on anomalies
       - Report at 1h, 4h, 24h marks
 
