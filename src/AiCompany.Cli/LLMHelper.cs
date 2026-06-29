@@ -13,31 +13,43 @@ public static class LLMHelper
             var platformConfig = configLoader.LoadPlatformConfig();
             var providerName = platformConfig.Platform.DefaultProvider;
             if (!platformConfig.Providers.TryGetValue(providerName, out var providerConfig))
+            {
+                Console.WriteLine($"  ⚠ Provider '{providerName}' not found in config. Set GEMINI_API_KEY or OPENAI_API_KEY.");
                 return;
+            }
 
             var apiKey = providerConfig.ApiKey
                 ?? Environment.GetEnvironmentVariable($"{providerName.ToUpperInvariant()}_API_KEY");
 
             if (string.IsNullOrEmpty(apiKey))
+            {
+                Console.WriteLine($"  ⚠ No API key for provider '{providerName}'. Set {providerName.ToUpperInvariant()}_API_KEY env var.");
                 return;
+            }
 
             var execution = platformConfig.Platform.Execution;
             var llm = CreateProvider(providerName, apiKey, providerConfig.Endpoint,
                 execution.RetryAttempts, execution.RetryDelaySeconds);
 
-            if (llm == null) return;
+            if (llm == null)
+            {
+                Console.WriteLine($"  ⚠ Unknown provider '{providerName}'. Supported: openai, gemini.");
+                return;
+            }
 
+            var defaultModel = providerConfig.DefaultModel ?? platformConfig.Platform.DefaultModel;
             agent.LlmProcessor = async (systemPrompt, userPrompt, model, temperature, maxTokens, ct) =>
             {
+                var effectiveModel = defaultModel ?? model;
                 var request = new LLMRequest(systemPrompt, userPrompt,
-                    model, temperature, maxTokens);
+                    effectiveModel, temperature, maxTokens);
                 var response = await llm.CompleteAsync(request, ct);
                 return response.Content;
             };
         }
-        catch
+        catch (Exception ex)
         {
-            // LLM wiring is optional; fall back to standalone mode
+            Console.WriteLine($"  ⚠ Failed to wire LLM provider: {ex.Message}");
         }
     }
 

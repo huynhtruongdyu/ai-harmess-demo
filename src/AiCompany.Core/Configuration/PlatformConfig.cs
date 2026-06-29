@@ -102,4 +102,7 @@ public class ProviderConfig
 
     [YamlMember(Alias = "endpoint")]
     public string? Endpoint { get; init; }
+
+    [YamlMember(Alias = "default_model")]
+    public string? DefaultModel { get; init; }
 }
