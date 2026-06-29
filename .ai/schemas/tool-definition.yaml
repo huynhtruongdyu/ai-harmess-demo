@@ -1,0 +1,58 @@
+# JSON Schema for Tool Definitions
+$schema: "https://json-schema.org/draft-07/schema#"
+type: object
+required:
+  - name
+  - description
+  - input_schema
+  - output_schema
+properties:
+  name:
+    type: string
+    pattern: "^[a-z0-9-]+$"
+  description:
+    type: string
+  input_schema:
+    type: object
+    required:
+      - type
+    properties:
+      type:
+        type: string
+        enum: ["object"]
+      properties:
+        type: object
+      required:
+        type: array
+        items:
+          type: string
+  output_schema:
+    type: object
+    required:
+      - type
+    properties:
+      type:
+        type: string
+      properties:
+        type: object
+  side_effects:
+    type: array
+    items:
+      type: string
+      enum:
+        - filesystem_write
+        - git_commit
+        - api_call
+        - deployment
+        - database_write
+        - notification
+  timeout_seconds:
+    type: integer
+    minimum: 1
+    maximum: 300
+  requires_confirmation:
+    type: boolean
+  allowed_agents:
+    type: array
+    items:
+      type: string

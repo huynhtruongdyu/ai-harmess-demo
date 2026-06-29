@@ -1,0 +1,127 @@
+name: release
+description: "Manages the full release lifecycle from branching through deployment and monitoring"
+version: 1.0.0
+
+trigger:
+  event: release.scheduled
+  artifact: .ai/memory/current/release-plan.md
+
+steps:
+  - id: create_release_branch
+    agent: devops-engineer
+    action: create_release_branch
+    input: release-plan.md
+    output: release_branch_created.md
+    constraints:
+      - Branch from main at designated commit
+      - Name pattern: release/v{version}
+      - Create release tag: v{version}-rc{number}
+
+  - id: update_version
+    agent: devops-engineer
+    action: bump_version
+    input: release_branch_created.md
+    output: version_bumped.md
+    constraints:
+      - Update version in all project files
+      - Create version commit
+
+  - id: write_changelog
+    agent: documentation-writer
+    action: write_release_changelog
+    input: version_bumped.md
+    output: changelog_draft.md
+    prompt_template: |
+      Write the changelog for this release:
+      - Gather all merged PRs since last release tag
+      - Categorize: Added, Changed, Fixed, Deprecated, Security
+      - Format following Keep a Changelog
+      - Include PR references and contributor credits
+
+  - id: run_full_test_suite
+    agent: qa-engineer
+    action: full_regression
+    input: version_bumped.md
+    output: regression_results.md
+    constraints:
+      - Full test suite: unit, integration, E2E, performance
+      - Coverage report generated
+      - Performance benchmark comparison
+
+  - id: security_scan
+    agent: security-engineer
+    action: release_security_scan
+    input: version_bumped.md
+    output: security_scan_results.md
+    constraints:
+      - SAST scan on full codebase
+      - Dependency vulnerability scan
+      - Container image scan
+      - Infrastructure compliance check
+
+  - id: release_approval
+    agent: ceo
+    action: approve_release
+    input:
+      - regression_results.md
+      - security_scan_results.md
+      - changelog_draft.md
+    output: release_approved.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - All tests pass
+      - No critical/high security vulnerabilities
+      - Performance within SLA
+      - QA sign-off received
+      - Changelog reviewed and accurate
+
+  - id: build_release_artifacts
+    agent: devops-engineer
+    action: build_release
+    input: release_approved.md
+    output: release_artifacts.md
+    constraints:
+      - Build all artifacts
+      - Tag release: v{version}
+      - Push to artifact registry
+
+  - id: deploy_release
+    agent: devops-engineer
+    action: deploy_release
+    input: release_artifacts.md
+    output: release_deployed.md
+    strategy:
+      - Deploy to staging first
+      - Run smoke tests
+      - Deploy to production (canary)
+      - Full rollout after canary verification
+
+  - id: post_release_monitoring
+    agent: devops-engineer
+    action: monitor_release
+    input: release_deployed.md
+    output: release_monitoring_report.md
+    constraints:
+      - Monitor for 24 hours post-release
+      - Track: error rate, latency, traffic, business metrics
+      - Alert on anomalies
+      - Report at 1h, 4h, 24h marks
+
+  - id: celebrate
+    agent: system
+    action: notify
+    channels:
+      - slack: "#general"
+    message: "🚀 Release v{version} is live! Changelog: {changelog_link}"
+
+error_handling:
+  - if: regression_found
+    action: block_release
+    message: "Regression found. Fix before proceeding with release."
+  - if: security_scan_critical
+    action: block_release
+    message: "Critical vulnerability found. Security review required before release."
+  - if: post_release_anomaly
+    action: rollback_with_docs
+    message: "Post-release anomaly detected. Consider rollback if threshold exceeded."

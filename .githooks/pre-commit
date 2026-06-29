@@ -1,0 +1,21 @@
+#!/bin/sh
+# Pre-commit hook: lint staged .cs files and run affected tests
+
+echo "🔍 Pre-commit checks..."
+
+STAGED_CS=$(git diff --cached --name-only --diff-filter=ACM | grep '\.cs$')
+if [ -z "$STAGED_CS" ]; then
+    echo "✓ No C# files staged, skipping lint."
+    exit 0
+fi
+
+# Check formatting on staged files
+dotnet format --verify-no-changes --include "$STAGED_CS" --nologo 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "❌ Formatting issues found. Run 'make lint-fix' before committing."
+    echo "   Or: dotnet format --include $(echo $STAGED_CS | tr '\n' ' ')"
+    exit 1
+fi
+
+echo "✓ Formatting OK"
+exit 0

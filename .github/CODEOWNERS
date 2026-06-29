@@ -1,0 +1,41 @@
+# Default reviewers for AI Software Company platform
+
+# Core platform configuration
+.ai/config.yaml          @solution-architect @tech-lead
+.ai/routing.yaml         @solution-architect @tech-lead
+
+# Agent definitions
+.ai/agents/ceo/          @ceo
+.ai/agents/product-manager/ @product-manager
+.ai/agents/business-analyst/ @business-analyst
+.ai/agents/solution-architect/ @solution-architect
+.ai/agents/tech-lead/    @tech-lead
+.ai/agents/backend-developer/ @backend-developer @solution-architect
+.ai/agents/frontend-developer/ @frontend-developer @tech-lead
+.ai/agents/mobile-developer/ @mobile-developer @tech-lead
+.ai/agents/qa-engineer/  @qa-engineer @tech-lead
+.ai/agents/security-engineer/ @security-engineer @solution-architect
+.ai/agents/devops-engineer/ @devops-engineer @solution-architect
+.ai/agents/code-reviewer/ @code-reviewer @tech-lead
+.ai/agents/documentation-writer/ @documentation-writer
+
+# Workflow definitions
+.ai/workflows/*.yaml     @tech-lead @solution-architect
+
+# Prompt library
+.ai/prompts/**           @tech-lead
+
+# Templates
+.ai/templates/**         @product-manager @documentation-writer
+
+# Schemas
+.ai/schemas/**           @solution-architect @tech-lead
+
+# Tools
+.ai/tools/**             @devops-engineer @security-engineer
+
+# Documentation
+docs/**                  @documentation-writer @tech-lead
+
+# CI/CD
+.github/workflows/**     @devops-engineer

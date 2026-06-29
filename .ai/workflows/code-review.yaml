@@ -1,0 +1,94 @@
+name: code-review
+description: "Dedicated code review workflow triggered when a PR is created"
+version: 1.0.0
+
+trigger:
+  event: pull_request.created
+  artifact: pr_content
+
+steps:
+  - id: automated_checks
+    agent: system
+    action: run_automated_checks
+    input: pr_content
+    output: automated_check_results.md
+    constraints:
+      - Lint check
+      - TypeScript type check
+      - Unit test run
+      - Security scan (SAST)
+      - Dependency vulnerability scan
+      - Coverage check (>= 80%)
+
+  - id: block_if_checks_fail
+    agent: system
+    action: block_pr
+    input: automated_check_results.md
+    output: pr_blocked.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - All automated checks pass
+    on_failure:
+      - notify_author
+      - label: "ci-failed"
+
+  - id: determine_review_depth
+    agent: code-reviewer
+    action: assess_pr_complexity
+    input: pr_content
+    output: review_depth.md
+    prompt_template: |
+      Assess PR complexity to determine review depth:
+      - Files changed count
+      - Lines changed
+      - Areas affected (security, architecture, performance)
+      - Risk level (based on changed components)
+      - Recommended reviewers (by expertise)
+
+  - id: perform_review
+    agent: code-reviewer
+    action: comprehensive_review
+    input:
+      - pr_content
+      - review_depth.md
+    output: review_comments.md
+    prompt_template: |
+      Review the PR thoroughly for:
+      1. Functionality: Does the code do what it should?
+      2. Architecture: Does it follow project patterns?
+      3. Security: Any vulnerabilities?
+      4. Performance: Any concerns?
+      5. Readability: Is the code clear?
+      6. Testing: Are tests adequate?
+      7. Documentation: Are changes documented?
+
+  - id: submit_review
+    agent: code-reviewer
+    action: submit_review_decision
+    input: review_comments.md
+    output: review_decision.md
+    gate:
+      requires_approval: true
+    options:
+      - approve
+      - request_changes
+      - comment_only
+
+  - id: merge_or_revise
+    agent: system
+    action: process_decision
+    input: review_decision.md
+    output: pr_merged_or_returned.md
+    rules:
+      - If approved: enable merge button
+      - If changes requested: notify author, apply blocked label
+      - If comment only: allow merge after author acknowledges
+
+error_handling:
+  - if: review_timeout
+    action: notify_reviewer
+    message: "Review approaching SLA limit. Please prioritize."
+  - if: reviewer_out_of_bandwidth
+    action: reassign
+    message: "Reviewer at capacity. Reassigning to next available."

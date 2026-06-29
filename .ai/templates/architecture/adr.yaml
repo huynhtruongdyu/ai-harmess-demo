@@ -1,0 +1,45 @@
+adr:
+  id: "ADR-{number}"
+  title: "{decision_title}"
+  status: "PROPOSED" # PROPOSED | ACCEPTED | DEPRECATED | SUPERSEDED
+  date: "{date}"
+  supersedes: # if applicable
+    - "ADR-{number}"
+  superseded_by: # if applicable
+    - "ADR-{number}"
+
+  context: |
+    {Describe the problem, constraints, and forces that led to this decision.
+    Include relevant background, requirements, and assumptions.}
+
+  decision: |
+    {Describe the decision made. Be specific and include implementation details.}
+
+  options:
+    - option: "{option_a_name}"
+      pros:
+        - "{pro_1}"
+        - "{pro_2}"
+      cons:
+        - "{con_1}"
+        - "{con_2}"
+    - option: "{option_b_name}"
+      pros:
+        - "{pro_1}"
+        - "{pro_2}"
+      cons:
+        - "{con_1}"
+        - "{con_2}"
+
+  consequences:
+    positive:
+      - "{positive_consequence_1}"
+      - "{positive_consequence_2}"
+    negative:
+      - "{negative_consequence_1}"
+      - "{negative_consequence_2}"
+
+  compliance:
+    - "[ ] Reviewed with Tech Lead"
+    - "[ ] Reviewed with Security Engineer"
+    - "[ ] Migration plan documented (if breaking change)"

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <ExcludeByAttribute>Obsolete,GeneratedCode</ExcludeByAttribute>
+          <ExcludeByFile>**/*.g.cs,**/*.Designer.cs</ExcludeByFile>
+          <Threshold type="line">80</Threshold>
+          <Threshold type="branch">70</Threshold>
+          <Threshold type="method">75</Threshold>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

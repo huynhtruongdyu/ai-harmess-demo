@@ -1,0 +1,76 @@
+name: bug-fix
+description: "Takes a reported bug through triage, fix, verification, and deployment"
+version: 1.0.0
+
+trigger:
+  event: bug.reported
+  artifact: .ai/memory/open-issues.md
+
+steps:
+  - id: triage_bug
+    agent: qa-engineer
+    action: triage_bug
+    input: open-issues.md
+    output: bug_triage.md
+    prompt_template: |
+      Triage the reported bug:
+      - Reproduce the issue
+      - Determine severity (P0-P4)
+      - Identify affected components
+      - Assess impact on users
+      - Suggest priority (immediate/this sprint/backlog)
+
+  - id: assign_fix
+    agent: tech-lead
+    action: assign_bug_fix
+    input: bug_triage.md
+    output: fix_assignment.md
+    rules:
+      - P0/P1: Assign immediately, bypass normal sprint flow
+      - P2: Add to current sprint
+      - P3/P4: Add to backlog
+
+  - id: implement_fix
+    agent: dynamic
+    action: fix_bug
+    input: fix_assignment.md
+    output: fix_implementation.md
+    target_agents:
+      - backend-developer
+      - frontend-developer
+      - mobile-developer
+    prompt_template: |
+      Fix the reported bug:
+      1. Understand the root cause
+      2. Write a failing test first (reproducing the bug)
+      3. Implement the fix
+      4. Verify the test passes
+      5. Check for similar patterns elsewhere
+
+  - id: verify_fix
+    agent: qa-engineer
+    action: verify_bug_fix
+    input: fix_implementation.md
+    output: fix_verified.md
+    constraints:
+      - Bug reproduction steps all pass
+      - Regression tests pass
+      - No side effects detected
+
+  - id: deploy_fix
+    agent: devops-engineer
+    action: deploy_hotfix
+    input: fix_verified.md
+    output: deploy_log.md
+    strategy:
+      P0: immediate_hotfix
+      P1: next_scheduled_release
+      P2+: normal_release_cycle
+
+error_handling:
+  - if: cannot_reproduce
+    action: add_logging
+    message: "Cannot reproduce. Add monitoring and detailed logging, then monitor."
+  - if: fix_causes_regression
+    action: revert_fix
+    message: "Fix caused regression. Reverting and re-analyzing root cause."

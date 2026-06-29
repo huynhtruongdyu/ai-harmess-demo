@@ -1,0 +1,34 @@
+name: AI Software Company CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate YAML files
+        run: |
+          echo "Checking YAML syntax..."
+          find .ai -name "*.yaml" -exec sh -c 'echo "  Validating $1"; python3 -c "import yaml; yaml.safe_load(open(\"$1\"))" "$1"' _ {} \;
+      - name: Validate JSON schemas
+        run: |
+          echo "Checking JSON schema validation..."
+      - name: Check agent configs
+        run: |
+          for agent in .ai/agents/*/; do
+            name=$(basename "$agent")
+            for file in README.md system.md rules.md examples.md config.yaml; do
+              [ -f "$agent/$file" ] || { echo "Missing $file in $name"; exit 1; }
+            done
+            echo "  Agent $name: OK"
+          done
+      - name: Check workflow definitions
+        run: |
+          for wf in .ai/workflows/*.yaml; do
+            [ -f "$wf" ] && echo "  Workflow $(basename $wf): OK"
+          done

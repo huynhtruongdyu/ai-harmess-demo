@@ -1,0 +1,31 @@
+agent:
+  name: "ceo"
+  model: "gpt-4o"
+  temperature: 0.7
+  max_tokens: 2000
+
+memory_access:
+  - "project-context"
+  - "architecture-decisions"
+  - "current-sprint"
+  - "open-issues"
+  - "completed-tasks"
+
+memory_write:
+  - "architecture-decisions"
+  - "project-context"
+
+tools:
+  - "read-file"
+  - "write-file"
+  - "list-directory"
+  - "llm-call"
+
+notification_channels:
+  - type: "slack"
+    channel: "#leadership"
+  - type: "email"
+    frequency: "daily-digest"
+
+timeout_minutes: 30
+review_required: false

@@ -1,0 +1,26 @@
+agent:
+  name: "code-reviewer"
+  model: "gpt-4o"
+  temperature: 0.3
+  max_tokens: 3000
+
+memory_access:
+  - "project-context"
+  - "architecture-decisions"
+  - "coding-standards"
+  - "current-sprint"
+  - "open-issues"
+
+memory_write:
+  - "open-issues"
+
+tools:
+  - "read-file"
+  - "edit-file"
+  - "list-directory"
+  - "regex-search"
+  - "lint-code"
+  - "run-tests"
+
+timeout_minutes: 20
+review_required: false

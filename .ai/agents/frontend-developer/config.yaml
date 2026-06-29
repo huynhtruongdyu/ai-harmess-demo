@@ -1,0 +1,28 @@
+agent:
+  name: "frontend-developer"
+  model: "gpt-4o"
+  temperature: 0.3
+  max_tokens: 4000
+
+memory_access:
+  - "project-context"
+  - "architecture-decisions"
+  - "coding-standards"
+  - "current-sprint"
+
+memory_write:
+  - null
+
+tools:
+  - "read-file"
+  - "write-file"
+  - "edit-file"
+  - "list-directory"
+  - "regex-search"
+  - "git-commit"
+  - "create-pr"
+  - "run-tests"
+  - "lint-code"
+
+timeout_minutes: 45
+review_required: true

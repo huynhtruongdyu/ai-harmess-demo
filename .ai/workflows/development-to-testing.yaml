@@ -1,0 +1,75 @@
+name: development-to-testing
+description: "Transitions completed development work into QA verification and validation"
+version: 1.0.0
+
+trigger:
+  event: pr.merged
+  artifact: .ai/memory/current/pr/
+
+steps:
+  - id: notify_qa
+    agent: system
+    action: notify
+    target_agent: qa-engineer
+    message: "New PR merged: {pr_id}. Ready for QA verification."
+
+  - id: review_test_plan
+    agent: qa-engineer
+    action: review_existing_test_plan
+    input:
+      - .ai/memory/current/stories/
+      - .ai/memory/current/pr/{pr_id}.md
+    output: test_plan_review.md
+
+  - id: execute_tests
+    agent: qa-engineer
+    action: run_test_suite
+    input: test_plan_review.md
+    output: test_results.json
+    constraints:
+      - Run regression suite
+      - Run feature-specific test plan
+      - Run exploratory tests on new functionality
+
+  - id: report_bugs
+    agent: qa-engineer
+    action: report_findings
+    input: test_results.json
+    output: .ai/memory/open-issues.md
+    mode: append
+    prompt_template: |
+      Document any bugs found during testing.
+      For each bug include: severity (P0-P4), steps to reproduce,
+      expected vs actual result, environment, and evidence.
+
+  - id: validate_quality_gates
+    agent: qa-engineer
+    action: check_quality_gates
+    input: test_results.json
+    output: quality_report.md
+    constraints:
+      - No P0/P1 bugs open
+      - Test pass rate >= 95%
+      - Coverage >= 80%
+
+  - id: sign_off
+    agent: qa-engineer
+    action: qa_sign_off
+    input: quality_report.md
+    output: .ai/memory/current/qa-signoff.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - All quality gates pass
+      - Bugs documented and triaged
+      - Regression suite green
+
+error_handling:
+  - if: quality_gates_fail
+    action: flag_release_blocker
+    to: tech-lead
+    message: "Quality gates not met. See quality_report.md for details."
+  - if: test_env_down
+    action: escalate_to_devops
+    to: devops-engineer
+    message: "Test environment unavailable. Please investigate."

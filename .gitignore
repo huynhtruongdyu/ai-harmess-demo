@@ -1,0 +1,52 @@
+# OS
+Thumbs.db
+.DS_Store
+*.swp
+*.swo
+
+# IDE
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Build
+bin/
+obj/
+dist/
+build/
+out/
+*.exe
+*.dll
+*.pdb
+*.so
+*.dylib
+
+# Dependencies
+node_modules/
+packages/
+*.nupkg
+
+# Environment
+.env
+.env.local
+*.env.secret
+
+# Logs
+*.log
+logs/
+
+# AI generated artifacts (ephemeral)
+.ai/memory/_cache/
+.ai/memory/_archive/
+
+# Test results
+TestResults/
+coverage/
+*.trx
+*.coverage
+
+# OS generated
+__pycache__/
+*.pyc

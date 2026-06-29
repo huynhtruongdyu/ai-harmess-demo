@@ -1,0 +1,80 @@
+name: testing-to-review
+description: "Conducts code review on all merged PRs, ensuring quality and consistency before wider release"
+version: 1.0.0
+
+trigger:
+  event: qa.signed_off
+  artifact: .ai/memory/current/qa-signoff.md
+
+steps:
+  - id: queue_review
+    agent: system
+    action: queue_for_review
+    input: .ai/memory/current/qa-signoff.md
+    output: review_queue.md
+
+  - id: assign_reviewer
+    agent: system
+    action: assign_reviewer
+    input: review_queue.md
+    output: review_assignment.md
+    rules:
+      - Primary reviewer by expertise match
+      - Secondary reviewer for critical path PRs
+      - Avoid assigning same reviewer > 3 PRs/day
+
+  - id: perform_review
+    agent: code-reviewer
+    action: review_code
+    input:
+      - review_assignment.md
+      - pr_diff: .ai/memory/current/pr/{pr_id}.diff
+    output: review_feedback.md
+    prompt_template: |
+      Review this PR for:
+      1. Correctness — does it meet acceptance criteria?
+      2. Design — follows clean architecture and SOLID?
+      3. Security — OWASP Top 10 vulnerabilities?
+      4. Performance — any obvious issues?
+      5. Testing — adequate coverage and meaningful tests?
+      6. Style — follows coding standards?
+
+  - id: address_feedback
+    agent: dynamic
+    action: address_review
+    input: review_feedback.md
+    output: feedback_addressed.md
+    target_agents:
+      - backend-developer
+      - frontend-developer
+      - mobile-developer
+    constraints:
+      - All blocking comments resolved
+      - Suggestions evaluated and addressed or documented
+
+  - id: approve_review
+    agent: code-reviewer
+    action: approve_or_reject
+    input: feedback_addressed.md
+    output: review_decision.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - All blocking issues resolved
+      - CI checks pass
+      - Code quality meets standards
+
+  - id: update_sprint_board
+    agent: tech-lead
+    action: update_review_status
+    input: review_decision.md
+    output: .ai/memory/current/sprint-board.json
+    mode: update
+
+error_handling:
+  - if: review_rejected
+    action: return_to_dev
+    message: "Review rejected. Address blocking issues and resubmit."
+  - if: reviewer_unresponsive > 8_hours
+    action: reassign_review
+    message: "Reviewer unresponsive. Reassigning to next available reviewer."

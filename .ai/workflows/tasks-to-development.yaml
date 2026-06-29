@@ -1,0 +1,69 @@
+name: tasks-to-development
+description: "Executes development tasks, tracking progress and handling blockers during the implementation phase"
+version: 1.0.0
+
+trigger:
+  event: sprint.started
+  artifact: .ai/memory/current/sprint-board.json
+
+steps:
+  - id: developer_pickup
+    agent: system
+    action: notify_developers
+    input: .ai/memory/current/sprint-board.json
+    output: task_assignments_sent.md
+
+  - id: implement_task
+    agent: dynamic
+    action: implement
+    input: assigned_task
+    output: implementation_complete
+    target_agents:
+      - backend-developer
+      - frontend-developer
+      - mobile-developer
+    parallel: true
+    prompt_template: |
+      Implement the following task according to the acceptance criteria and
+      architecture guidelines. Follow coding standards from .ai/memory/coding-standards.md.
+      Include tests and documentation updates.
+
+  - id: self_review
+    agent: dynamic
+    action: self_review
+    input: implementation_complete
+    output: self_reviewed
+    constraints:
+      - Run lint and tests
+      - Check for TODOs and debug code
+      - Verify acceptance criteria met
+
+  - id: create_pr
+    agent: dynamic
+    action: create_pull_request
+    input: self_reviewed
+    output: .ai/memory/current/pr/{task_id}.md
+    prompt_template: |
+      Create a PR with:
+      - Descriptive title and description linking to the story
+      - Checklist of completed items
+      - Test coverage report
+      - Screenshots (for frontend tasks)
+
+  - id: update_sprint_board
+    agent: tech-lead
+    action: update_task_status
+    input:
+      task_id: "{task_id}"
+      status: "in_review"
+    output: .ai/memory/current/sprint-board.json
+    mode: update
+
+error_handling:
+  - if: blocked > 4_hours
+    action: escalate_blocker
+    to: tech-lead
+    message: "Task {task_id} blocked for > 4 hours."
+  - if: implementation_fails_tests
+    action: return_to_dev
+    message: "Tests failing. Fix test failures and resubmit."

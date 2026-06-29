@@ -1,0 +1,27 @@
+agent:
+  name: "devops-engineer"
+  model: "gpt-4o"
+  temperature: 0.3
+  max_tokens: 3000
+
+memory_access:
+  - "project-context"
+  - "architecture-decisions"
+  - "current-sprint"
+  - "open-issues"
+
+memory_write:
+  - "architecture-decisions"
+  - "open-issues"
+
+tools:
+  - "read-file"
+  - "write-file"
+  - "edit-file"
+  - "list-directory"
+  - "regex-search"
+  - "run-tests"
+  - "lint-code"
+
+timeout_minutes: 30
+review_required: false

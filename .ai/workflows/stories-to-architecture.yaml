@@ -1,0 +1,72 @@
+name: stories-to-architecture
+description: "Transforms validated user stories into architecture decisions, system design, and technical specifications"
+version: 1.0.0
+
+trigger:
+  event: stories.validated
+  artifact: .ai/memory/current/stories/
+
+steps:
+  - id: review_requirements
+    agent: solution-architect
+    action: review_stories_for_architecture
+    input: .ai/memory/current/stories/
+    output: architecture_input.md
+
+  - id: create_system_design
+    agent: solution-architect
+    action: design_system
+    input: architecture_input.md
+    output: system_design.md
+    prompt_template: |
+      Design the system architecture for the following requirements.
+      Include:
+      - C4 context diagram (Mermaid)
+      - C4 container diagram
+      - Data flow between services
+      - Technology recommendations for each component
+      Reference existing ADRs and architecture from memory.
+
+  - id: identify_adrs
+    agent: solution-architect
+    action: identify_decisions
+    input: system_design.md
+    output: adr_list.md
+    prompt_template: |
+      Identify all architectural decisions that need formal ADRs.
+      For each decision, provide:
+      - Decision to be made
+      - Options available
+      - Recommendation with rationale
+
+  - id: write_adrs
+    agent: solution-architect
+    action: write_adrs
+    input: adr_list.md
+    output: .ai/memory/architecture-decisions.md
+    template: .ai/templates/architecture/adr.yaml
+    mode: append
+
+  - id: validate_architecture
+    agent: tech-lead
+    action: validate_architecture
+    input: system_design.md
+    output: architecture_validated.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - Design is implementable within sprint constraints
+      - Team has necessary skills for chosen technologies
+      - No obvious scalability or performance issues
+
+  - id: finalize_architecture
+    agent: solution-architect
+    action: finalize_architecture
+    input: architecture_validated.md
+    output: .ai/memory/current/architecture.md
+
+error_handling:
+  - if: adr_conflict
+    action: resolve_adr_conflict
+    to: solution-architect
+    message: "ADR conflicts with existing decisions. Review and propose superseding ADR."

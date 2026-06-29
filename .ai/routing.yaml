@@ -1,0 +1,88 @@
+# Task Routing Rules
+# Determines which agent receives which task based on capability matching.
+
+routing:
+  default_strategy: "capability-match"
+
+  rules:
+    - match:
+        task_type: "strategic_vision"
+        keywords: ["vision", "strategy", "roadmap", "stakeholder", "funding"]
+      target_agent: "ceo"
+      priority: 100
+
+    - match:
+        task_type: "product_definition"
+        keywords: ["prd", "feature", "backlog", "priority", "release"]
+      target_agent: "product-manager"
+      priority: 90
+
+    - match:
+        task_type: "requirements"
+        keywords: ["story", "acceptance", "criteria", "specification"]
+      target_agent: "business-analyst"
+      priority: 80
+
+    - match:
+        task_type: "architecture"
+        keywords: ["design", "architecture", "adr", "tech-stack"]
+      target_agent: "solution-architect"
+      priority: 85
+
+    - match:
+        task_type: "task_planning"
+        keywords: ["breakdown", "sprint", "estimate", "assign"]
+      target_agent: "tech-lead"
+      priority: 75
+
+    - match:
+        task_type: "backend_implementation"
+        keywords: ["api", "service", "database", "migration", "backend"]
+      target_agent: "backend-developer"
+      priority: 70
+
+    - match:
+        task_type: "frontend_implementation"
+        keywords: ["ui", "component", "page", "frontend", "css"]
+      target_agent: "frontend-developer"
+      priority: 70
+
+    - match:
+        task_type: "mobile_implementation"
+        keywords: ["mobile", "ios", "android", "swift", "kotlin"]
+      target_agent: "mobile-developer"
+      priority: 70
+
+    - match:
+        task_type: "testing"
+        keywords: ["test", "qa", "regression", "e2e"]
+      target_agent: "qa-engineer"
+      priority: 65
+
+    - match:
+        task_type: "security"
+        keywords: ["security", "vulnerability", "threat", "owasp", "compliance"]
+      target_agent: "security-engineer"
+      priority: 80
+
+    - match:
+        task_type: "infrastructure"
+        keywords: ["deploy", "ci", "cd", "infrastructure", "monitoring"]
+      target_agent: "devops-engineer"
+      priority: 75
+
+    - match:
+        task_type: "code_review"
+        keywords: ["review", "pr", "pull-request", "quality"]
+      target_agent: "code-reviewer"
+      priority: 70
+
+    - match:
+        task_type: "documentation"
+        keywords: ["docs", "readme", "changelog", "user-guide"]
+      target_agent: "documentation-writer"
+      priority: 60
+
+  fallback:
+    action: "broadcast_to_all"
+    timeout_seconds: 120

@@ -1,0 +1,73 @@
+name: prd-to-stories
+description: "Decomposes an approved PRD into epics, user stories, and acceptance criteria"
+version: 1.0.0
+
+trigger:
+  event: prd.approved
+  artifact: .ai/memory/current/prd.md
+
+steps:
+  - id: analyze_prd
+    agent: business-analyst
+    action: analyze_prd
+    input: .ai/memory/current/prd.md
+    output: prd_analysis.md
+    prompt_template: |
+      Analyze the PRD and identify:
+      1. Epics (major feature areas)
+      2. User personas involved
+      3. Business rules embedded in requirements
+      4. Dependencies between features
+
+  - id: extract_business_rules
+    agent: business-analyst
+    action: extract_rules
+    input: prd_analysis.md
+    output: .ai/memory/business-rules.md
+    mode: append
+
+  - id: write_stories
+    agent: business-analyst
+    action: write_stories
+    input: prd_analysis.md
+    output: stories_draft.json
+    template: .ai/templates/stories/user-story.yaml
+    constraints:
+      - Each story follows INVEST criteria
+      - Acceptance criteria in Gherkin format
+      - Traceable to PRD requirement IDs
+
+  - id: review_stories_pm
+    agent: product-manager
+    action: review_stories
+    input: stories_draft.json
+    output: stories_reviewed.json
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - All PRD requirements covered
+      - Stories are estimated (T-shirt sizes)
+      - No gaps or overlaps
+
+  - id: review_stories_architect
+    agent: solution-architect
+    action: validate_stories_technically
+    input: stories_reviewed.json
+    output: stories_validated.json
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - Technically feasible
+      - No architecture violations
+      - Dependencies correctly identified
+
+  - id: finalize_stories
+    agent: business-analyst
+    action: finalize_stories
+    input: stories_validated.json
+    output: .ai/memory/current/stories/
+
+error_handling:
+  - if: story_validation_fails
+    action: return_to_ba
+    message: "Stories failed technical validation. Review architecture constraints."

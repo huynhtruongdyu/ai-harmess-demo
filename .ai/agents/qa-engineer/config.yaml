@@ -1,0 +1,28 @@
+agent:
+  name: "qa-engineer"
+  model: "gpt-4o"
+  temperature: 0.3
+  max_tokens: 3000
+
+memory_access:
+  - "project-context"
+  - "business-rules"
+  - "current-sprint"
+  - "open-issues"
+  - "completed-tasks"
+
+memory_write:
+  - "open-issues"
+  - "completed-tasks"
+
+tools:
+  - "read-file"
+  - "write-file"
+  - "edit-file"
+  - "list-directory"
+  - "regex-search"
+  - "run-tests"
+  - "lint-code"
+
+timeout_minutes: 30
+review_required: false

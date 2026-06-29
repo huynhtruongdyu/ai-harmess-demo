@@ -1,0 +1,48 @@
+# JSON Schema for Prompt Metadata
+$schema: "https://json-schema.org/draft-07/schema#"
+type: object
+required:
+  - name
+  - category
+  - description
+  - variables
+properties:
+  name:
+    type: string
+    pattern: "^[a-z0-9-]+\\.md$"
+  category:
+    type: string
+    enum:
+      - planning
+      - coding
+      - debugging
+      - reviewing
+      - testing
+      - refactoring
+      - docs
+      - db-design
+      - api-design
+      - security
+      - perf
+  description:
+    type: string
+  variables:
+    type: array
+    items:
+      type: object
+      required:
+        - name
+        - description
+        - required
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        required:
+          type: boolean
+        default:
+          type: string
+  version:
+    type: string
+    pattern: "^\\d+\\.\\d+\\.\\d+$"

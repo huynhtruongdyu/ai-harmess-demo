@@ -1,0 +1,30 @@
+#!/bin/sh
+# Commit-msg hook: validate conventional commit format
+
+COMMIT_MSG=$(cat "$1")
+
+# Pattern: type(scope): description
+# Types: feat, fix, docs, style, refactor, perf, test, chore, ci
+# Scopes: core, cli, integrations, agents, workflows, memory, tools, config, deps
+PATTERN="^(feat|fix|docs|style|refactor|perf|test|chore|ci)\((core|cli|integrations|agents|workflows|memory|tools|config|deps|[a-z-]+)\): .{1,100}$"
+
+if echo "$COMMIT_MSG" | grep -Eq "$PATTERN"; then
+    exit 0
+fi
+
+# Allow merge commits and fixup! / squash!
+if echo "$COMMIT_MSG" | grep -Eq "^(Merge|fixup!|squash!|WIP|wip)"; then
+    exit 0
+fi
+
+echo ""
+echo "❌ Invalid commit message format."
+echo ""
+echo "Expected: type(scope): description"
+echo ""
+echo "Types: feat, fix, docs, style, refactor, perf, test, chore, ci"
+echo "Scopes: core, cli, integrations, agents, workflows, memory, tools, config, deps"
+echo ""
+echo "Example: feat(core): add configuration loader with YAML support"
+echo ""
+exit 1

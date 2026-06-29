@@ -1,0 +1,88 @@
+name: api-design
+description: "Designs, reviews, and specifies a new API endpoint or modifies an existing one"
+version: 1.0.0
+
+trigger:
+  event: api_change_requested
+  artifact: .ai/memory/current/api-request.md
+
+steps:
+  - id: review_requirements
+    agent: solution-architect
+    action: review_api_requirements
+    input: .ai/memory/current/api-request.md
+    output: api_requirements_review.md
+    constraints:
+      - Identify if new endpoint or modification
+      - Check for existing similar endpoints
+      - Review RESTful resource naming conventions
+
+  - id: design_endpoint
+    agent: solution-architect
+    action: design_api_endpoint
+    input: api_requirements_review.md
+    output: api_design.md
+    prompt_template: |
+      Design the API endpoint following RESTful conventions:
+      - Resource name (plural nouns)
+      - HTTP method and URL pattern
+      - Request parameters (path, query, body)
+      - Response schema
+      - Error responses
+      - Authentication and authorization requirements
+      - Rate limiting considerations
+      - Pagination strategy (for list endpoints)
+      - Idempotency requirements (for mutation endpoints)
+
+  - id: create_openapi_spec
+    agent: solution-architect
+    action: write_openapi_spec
+    input: api_design.md
+    output: .ai/memory/current/api/openapi-{endpoint}.yaml
+    template: .ai/templates/api/openapi.yaml
+    constraints:
+      - OpenAPI 3.1 specification
+      - Include request/response examples
+      - Document all error codes
+      - Include security scheme definitions
+
+  - id: review_api_design
+    agent: tech-lead
+    action: review_api_design
+    input: api_design.md
+    output: api_design_reviewed.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - Consistent with existing API conventions
+      - No breaking changes (or migration plan documented)
+      - Performance requirements achievable
+      - Security requirements addressed
+
+  - id: generate_mock_server
+    agent: devops-engineer
+    action: deploy_mock_api
+    input: openapi_spec.yaml
+    output: mock_server_url.md
+    constraints:
+      - Deploy mock server for frontend/mobile development
+      - Mock returns realistic responses based on spec
+      - Mock available for the remainder of development cycle
+
+  - id: create_client_sdk
+    agent: backend-developer
+    action: generate_client
+    input: openapi_spec.yaml
+    output: client_sdk_generated.md
+    constraints:
+      - Generate typed client for frontend/mobile
+      - Include proper error handling
+      - Add retry and timeout configuration
+
+error_handling:
+  - if: breaking_change_required
+    action: plan_migration
+    message: "Breaking change detected. Plan version bump and migration strategy."
+  - if: api_scope_too_large
+    action: decompose_endpoint
+    message: "API endpoint doing too much. Decompose into multiple focused endpoints."

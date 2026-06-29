@@ -1,0 +1,26 @@
+story:
+  id: "ST-{number}"
+  title: "{story_title}"
+  description: >
+    As a {user_role},
+    I want to {action}
+    so that {benefit}.
+  acceptance_criteria:
+    - scenario: "{scenario_description}"
+      given: "{given_context}"
+      when: "{action_performed}"
+      then: "{expected_outcome}"
+    - scenario: "{error_scenario}"
+      given: "{error_context}"
+      when: "{error_action}"
+      then: "{error_outcome}"
+  business_rules:
+    - "{BR_number}"
+  dependencies:
+    - "{dependency_story_id}"
+  estimate:
+    points: 0
+    tshirt: "M"
+  labels:
+    - "{label}"
+  linked_prd: "PRD-{year}-{number}"

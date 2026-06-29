@@ -1,0 +1,83 @@
+name: review-to-deployment
+description: "Takes approved code through CI/CD pipeline to production deployment"
+version: 1.0.0
+
+trigger:
+  event: review.approved
+  artifact: .ai/memory/current/review_decision.md
+
+steps:
+  - id: pre_deploy_check
+    agent: devops-engineer
+    action: pre_deployment_checklist
+    input: review_decision.md
+    output: pre_deploy_report.md
+    constraints:
+      - CI pipeline green
+      - Security scan clean
+      - Infrastructure changes approved
+      - Backup completed
+
+  - id: deploy_to_staging
+    agent: devops-engineer
+    action: deploy_environment
+    input: pre_deploy_report.md
+    output: staging_deploy_log.md
+    environment: staging
+
+  - id: smoke_tests
+    agent: qa-engineer
+    action: smoke_test
+    input: staging_deploy_log.md
+    output: smoke_test_results.md
+    constraints:
+      - Top 10 critical paths tested
+      - All pass with no regressions
+
+  - id: deploy_to_production
+    agent: devops-engineer
+    action: deploy_production
+    input: smoke_test_results.md
+    output: production_deploy_log.md
+    environment: production
+    strategy: canary
+    canary:
+      initial_weight: 10
+      increment: 25
+      interval_minutes: 10
+      thresholds:
+        error_rate: 1.0
+        latency_p99: 500
+
+  - id: production_smoke
+    agent: qa-engineer
+    action: production_smoke_test
+    input: production_deploy_log.md
+    output: production_verified.md
+    constraints:
+      - Critical user flows working
+      - Monitoring shows no anomalies
+
+  - id: deploy_complete
+    agent: devops-engineer
+    action: mark_deployment_complete
+    input: production_verified.md
+    output: .ai/memory/current/deployment_log.md
+
+  - id: notify_team
+    agent: system
+    action: notify
+    channels:
+      - slack: "#releases"
+    message: "Deployment {version} complete. Monitoring active."
+
+error_handling:
+  - if: staging_tests_fail
+    action: rollback_staging
+    message: "Staging tests failed. Rolling back. Investigate before retry."
+  - if: canary_threshold_exceeded
+    action: rollback_canary
+    message: "Canary metrics exceeded threshold. Rolling back to previous version."
+  - if: production_deploy_fails
+    action: rollback_production
+    message: "Production deploy failed. Automated rollback initiated."

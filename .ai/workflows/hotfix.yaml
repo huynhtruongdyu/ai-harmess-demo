@@ -1,0 +1,107 @@
+name: hotfix
+description: "Emergency workflow for critical production issues requiring immediate remediation"
+version: 1.0.0
+
+trigger:
+  event: production_incident.p0_p1
+  artifact: .ai/memory/open-issues.md
+
+steps:
+  - id: declare_incident
+    agent: system
+    action: declare_incident
+    severity: P0/P1
+    notify:
+      - tech-lead
+      - security-engineer
+      - devops-engineer
+      - ceo
+
+  - id: triage_incident
+    agent: tech-lead
+    action: triage_incident
+    input: production_alert.md
+    output: incident_triage.md
+    timeout_minutes: 15
+    constraints:
+      - Determine impact scope
+      - Identify affected component
+      - Assess if rollback is faster than fix
+      - Decide: rollback vs hotfix
+
+  - id: create_hotfix_branch
+    agent: devops-engineer
+    action: create_hotfix_branch
+    input: incident_triage.md
+    output: hotfix_branch.md
+    constraints:
+      - Branch from last known good commit (not main)
+      - Name pattern: hotfix/{issue-id}-{description}
+
+  - id: implement_hotfix
+    agent: dynamic
+    action: implement_hotfix
+    input: hotfix_branch.md
+    output: hotfix_implementation.md
+    target_agents:
+      - backend-developer
+      - frontend-developer
+      - mobile-developer
+    timeout_minutes: 60
+    constraints:
+      - Minimal change principle (fix the bug, nothing else)
+      - Include regression test
+      - No refactoring
+
+  - id: expedited_review
+    agent: code-reviewer
+    action: expedited_review
+    input: hotfix_implementation.md
+    output: hotfix_review.md
+    timeout_minutes: 30
+    constraints:
+      - Focus on correctness and side effects
+      - Skip style comments
+      - At least 1 approval required
+
+  - id: deploy_hotfix
+    agent: devops-engineer
+    action: emergency_deploy
+    input: hotfix_review.md
+    output: hotfix_deploy_log.md
+    constraints:
+      - Bypass normal canary (deploy to all instances)
+      - Monitor closely for 30 minutes post-deploy
+      - Rollback script ready before deploy
+
+  - id: verify_production
+    agent: qa-engineer
+    action: verify_hotfix
+    input: hotfix_deploy_log.md
+    output: hotfix_verified.md
+    constraints:
+      - Confirm bug is fixed in production
+      - Check monitoring for new anomalies
+      - Verify related functionality
+
+  - id: post_mortem
+    agent: tech-lead
+    action: incident_post_mortem
+    input: hotfix_verified.md
+    output: .ai/memory/current/post-mortem-{date}.md
+    prompt_template: |
+      Write incident post-mortem including:
+      - Timeline of events
+      - Root cause analysis (5 Whys)
+      - What went well
+      - What went wrong
+      - Action items with owners and deadlines
+      - How to prevent recurrence
+
+error_handling:
+  - if: hotfix_causes_regression
+    action: rollback_and_escalate
+    message: "Hotfix caused regression. Rolling back. Escalating to CEO."
+  - if: fix_takes_too_long
+    action: switch_to_rollback
+    message: "Fix taking too long (> 60 min). Switch to rollback strategy."

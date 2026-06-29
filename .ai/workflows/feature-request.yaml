@@ -1,0 +1,83 @@
+name: feature-request
+description: "Processes a feature request from submission through feasibility analysis to prioritization"
+version: 1.0.0
+
+trigger:
+  event: feature_request.submitted
+  artifact: .ai/memory/current/feature-request.md
+
+steps:
+  - id: categorize_request
+    agent: product-manager
+    action: categorize_feature_request
+    input: .ai/memory/current/feature-request.md
+    output: feature_category.md
+    prompt_template: |
+      Categorize this feature request:
+      - Type: New feature / Enhancement / Integration / Workflow change
+      - Strategic alignment: Which OKR does this support?
+      - User impact: How many users benefit and how significantly?
+      - Confidence in value: High / Medium / Low (and why)
+
+  - id: feasibility_study
+    agent: solution-architect
+    action: assess_feasibility
+    input: feature_category.md
+    output: feasibility_report.md
+    constraints:
+      - Technical feasibility assessment
+      - Effort estimate (T-shirt size: XS, S, M, L, XL, XXL)
+      - Dependency identification
+      - Risk assessment
+
+  - id: value_assessment
+    agent: business-analyst
+    action: assess_business_value
+    input: feature_category.md
+    output: value_assessment.md
+    prompt_template: |
+      Assess the business value:
+      - Projected user adoption
+      - Revenue impact (if applicable)
+      - Customer satisfaction impact
+      - Strategic importance
+      - Competitive differentiation
+
+  - id: prioritize
+    agent: product-manager
+    action: prioritize_request
+    input:
+      - feasibility_report.md
+      - value_assessment.md
+    output: priority_decision.md
+    prompt_template: |
+      Using RICE scoring (Reach × Impact × Confidence / Effort),
+      calculate the priority score for this feature request.
+      Compare against current backlog and recommend a position.
+
+  - id: ceo_review
+    agent: ceo
+    action: review_feature_priority
+    input: priority_decision.md
+    output: final_decision.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - High strategic value features approved
+      - Resource commitment confirmed
+      - Timeline expectations set
+
+  - id: update_backlog
+    agent: product-manager
+    action: update_backlog
+    input: final_decision.md
+    output: .ai/memory/current/backlog.md
+    mode: update
+
+error_handling:
+  - if: feasibility_unknown
+    action: request_poc
+    message: "Feasibility unclear. Request proof-of-concept before prioritization."
+  - if: rejected
+    action: communicate_decision
+    message: "Feature request not prioritized. Communicate rationale to requester."

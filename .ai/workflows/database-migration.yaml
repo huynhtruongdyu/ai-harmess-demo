@@ -1,0 +1,92 @@
+name: database-migration
+description: "Safely plans, implements, and executes database schema changes"
+version: 1.0.0
+
+trigger:
+  event: schema_change_requested
+  artifact: .ai/memory/current/schema-request.md
+
+steps:
+  - id: assess_impact
+    agent: solution-architect
+    action: assess_migration_impact
+    input: schema-request.md
+    output: migration_impact.md
+    prompt_template: |
+      Assess the database migration impact:
+      - Tables affected
+      - Data volume involved
+      - Existing queries affected
+      - Performance implications
+      - Rollback complexity
+      - Downtime requirement
+      - Locking concerns
+
+  - id: design_migration
+    agent: backend-developer
+    action: design_migration
+    input: migration_impact.md
+    output: migration_design.md
+    constraints:
+      - Forward migration script
+      - Rollback migration script
+      - Data migration (if needed)
+      - Seed data updates
+      - Index creation strategy
+
+  - id: review_migration
+    agent: solution-architect
+    action: review_migration_plan
+    input: migration_design.md
+    output: migration_reviewed.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - Rollback script complete and tested
+      - Performance impact acceptable
+      - No data loss in forward migration
+      - Downtime window clearly defined
+
+  - id: implement_migration
+    agent: backend-developer
+    action: write_migration_scripts
+    input: migration_reviewed.md
+    output: migration_scripts.md
+    constraints:
+      - Use migration framework (EF Core Migrations / FluentMigrator)
+      - Each migration is idempotent
+      - Tests for migration (up and down)
+      - Performance tested against production-sized dataset
+
+  - id: test_migration
+    agent: qa-engineer
+    action: test_migration
+    input: migration_scripts.md
+    output: migration_tested.md
+    constraints:
+      - Test against copy of production data
+      - Measure execution time
+      - Verify rollback
+      - Verify application still works post-migration
+
+  - id: execute_migration
+    agent: devops-engineer
+    action: run_migration
+    input: migration_tested.md
+    output: migration_executed.md
+    constraints:
+      - Schedule during maintenance window
+      - Database backup before migration
+      - Monitor replication lag
+      - Run rollback script if migration fails
+
+error_handling:
+  - if: migration_fails
+    action: execute_rollback
+    message: "Migration failed. Executing rollback script immediately."
+  - if: performance_degradation
+    action: add_indexes
+    message: "Query performance degraded post-migration. Analyze and add missing indexes."
+  - if: data_loss_detected
+    action: halt_and_restore
+    message: "Data loss detected. Halting and restoring from backup."

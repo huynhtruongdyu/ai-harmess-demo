@@ -1,0 +1,75 @@
+name: architecture-to-tasks
+description: "Decomposes architecture and user stories into granular developer tasks with estimates and assignments"
+version: 1.0.0
+
+trigger:
+  event: architecture.approved
+  artifact: .ai/memory/current/architecture.md
+
+steps:
+  - id: review_all_inputs
+    agent: tech-lead
+    action: review_sprint_inputs
+    input:
+      - .ai/memory/current/architecture.md
+      - .ai/memory/current/stories/
+      - .ai/memory/current-sprint.md
+    output: sprint_input_summary.md
+
+  - id: break_down_stories
+    agent: tech-lead
+    action: decompose_stories
+    input: sprint_input_summary.md
+    output: task_breakdown.json
+    constraints:
+      - Tasks between 4-16 hours
+      - Dependencies explicitly documented
+      - Each task has clear definition of done
+
+  - id: estimate_tasks
+    agent: tech-lead
+    action: estimate_effort
+    input: task_breakdown.json
+    output: estimated_tasks.json
+    prompt_template: |
+      Estimate each task using Fibonacci story points (1, 2, 3, 5, 8, 13, 21).
+      Consider: complexity, unknowns, test effort, documentation.
+      Total sprint capacity: {sprint_capacity} points.
+
+  - id: assign_tasks
+    agent: tech-lead
+    action: assign_developers
+    input: estimated_tasks.json
+    output: assigned_tasks.json
+    constraints:
+      - No developer > 40% critical path
+      - Knowledge distribution across tasks
+      - Junior + senior pairing where appropriate
+
+  - id: validate_sprint
+    agent: product-manager
+    action: validate_sprint_scope
+    input: assigned_tasks.json
+    output: sprint_approved.json
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - Sprint scope aligned with priorities
+      - Capacity not exceeded
+      - Business value justification for each story
+
+  - id: publish_sprint
+    agent: tech-lead
+    action: publish_sprint_board
+    input: sprint_approved.json
+    output: .ai/memory/current/sprint-board.json
+
+error_handling:
+  - if: capacity_exceeded
+    action: negotiate_scope
+    between: [tech-lead, product-manager]
+    message: "Sprint capacity exceeded. Negotiate scope reduction with PM."
+  - if: estimation_variance > 50%
+    action: flag_for_refinement
+    to: business-analyst
+    message: "Story estimates vary widely. Requires refinement."

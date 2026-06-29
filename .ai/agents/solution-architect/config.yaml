@@ -1,0 +1,28 @@
+agent:
+  name: "solution-architect"
+  model: "gpt-4o"
+  temperature: 0.4
+  max_tokens: 3000
+
+memory_access:
+  - "project-context"
+  - "architecture-decisions"
+  - "business-rules"
+  - "coding-standards"
+  - "glossary"
+
+memory_write:
+  - "architecture-decisions"
+  - "project-context"
+  - "coding-standards"
+
+tools:
+  - "read-file"
+  - "write-file"
+  - "edit-file"
+  - "list-directory"
+  - "regex-search"
+  - "llm-call"
+
+timeout_minutes: 30
+review_required: false

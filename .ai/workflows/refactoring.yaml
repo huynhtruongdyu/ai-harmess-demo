@@ -1,0 +1,79 @@
+name: refactoring
+description: "Plans and executes code refactoring to reduce technical debt while maintaining functionality"
+version: 1.0.0
+
+trigger:
+  event: tech_debt.ticketed
+  artifact: .ai/memory/open-issues.md
+
+steps:
+  - id: assess_tech_debt
+    agent: tech-lead
+    action: assess_refactoring_need
+    input: .ai/memory/open-issues.md
+    output: refactoring_assessment.md
+    prompt_template: |
+      Assess the technical debt item:
+      - Current pain level (1-5): how much does this hurt development velocity?
+      - Risk level (1-5): what's the risk of NOT refactoring?
+      - Effort estimate: how long would the refactoring take?
+      - Strategy: big bang vs incremental vs strangler fig
+
+  - id: design_refactoring
+    agent: solution-architect
+    action: design_refactoring_plan
+    input: refactoring_assessment.md
+    output: refactoring_plan.md
+    constraints:
+      - Define target state architecture
+      - Identify interface boundaries (for incremental migration)
+      - Document backward compatibility requirements
+      - Define rollback criteria
+
+  - id: break_down_refactoring
+    agent: tech-lead
+    action: break_down_refactoring
+    input: refactoring_plan.md
+    output: refactoring_tasks.md
+    constraints:
+      - Each step should be independently deployable
+      - Each step should maintain backward compatibility
+      - Tests must pass at every intermediate step
+
+  - id: execute_refactoring
+    agent: dynamic
+    action: refactor
+    input: refactoring_tasks.md
+    output: refactoring_complete.md
+    target_agents:
+      - backend-developer
+      - frontend-developer
+      - mobile-developer
+    constraints:
+      - No functionality changes during refactoring
+      - Existing tests must continue to pass
+      - No new features in refactoring PRs
+
+  - id: validate_refactoring
+    agent: qa-engineer
+    action: regression_test
+    input: refactoring_complete.md
+    output: refactoring_validated.md
+    constraints:
+      - Full regression suite passes
+      - Performance metrics maintained or improved
+      - No behavioral changes detected
+
+  - id: update_architecture_docs
+    agent: documentation-writer
+    action: update_architecture_docs
+    input: refactoring_validated.md
+    output: architecture_updated.md
+
+error_handling:
+  - if: refactoring_too_risky
+    action: escalate_to_architect
+    message: "Refactoring risk exceeds threshold. Re-evaluate approach or postpone."
+  - if: regression_found
+    action: halt_and_fix
+    message: "Regression detected. Halting refactoring, fixing regression first."

@@ -1,0 +1,26 @@
+agent:
+  name: "business-analyst"
+  model: "gpt-4o"
+  temperature: 0.4
+  max_tokens: 3000
+
+memory_access:
+  - "project-context"
+  - "business-rules"
+  - "glossary"
+  - "current-sprint"
+
+memory_write:
+  - "business-rules"
+  - "glossary"
+
+tools:
+  - "read-file"
+  - "write-file"
+  - "edit-file"
+  - "list-directory"
+  - "regex-search"
+  - "llm-call"
+
+timeout_minutes: 30
+review_required: false

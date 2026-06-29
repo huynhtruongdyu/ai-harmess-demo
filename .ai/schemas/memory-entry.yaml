@@ -1,0 +1,46 @@
+# JSON Schema for Shared Memory Entries
+$schema: "https://json-schema.org/draft-07/schema#"
+type: object
+required:
+  - type
+  - content
+properties:
+  type:
+    type: string
+    enum:
+      - project-context
+      - architecture-decision
+      - business-rule
+      - coding-standard
+      - glossary-term
+      - sprint
+      - issue
+      - completed-task
+  content:
+    type: string
+  metadata:
+    type: object
+    properties:
+      author:
+        type: string
+      created:
+        type: string
+        format: date-time
+      updated:
+        type: string
+        format: date-time
+      version:
+        type: integer
+      tags:
+        type: array
+        items:
+          type: string
+  references:
+    type: array
+    items:
+      type: object
+      properties:
+        type:
+          type: string
+        id:
+          type: string

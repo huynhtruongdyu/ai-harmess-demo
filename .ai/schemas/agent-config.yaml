@@ -1,0 +1,67 @@
+# JSON Schema for Agent Configuration (config.yaml)
+$schema: "https://json-schema.org/draft-07/schema#"
+type: object
+required:
+  - agent
+  - tools
+properties:
+  agent:
+    type: object
+    required:
+      - name
+      - model
+      - temperature
+      - max_tokens
+    properties:
+      name:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+      model:
+        type: string
+        enum: ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "claude-3-opus", "claude-3-sonnet"]
+      temperature:
+        type: number
+        minimum: 0.0
+        maximum: 2.0
+      max_tokens:
+        type: integer
+        minimum: 500
+        maximum: 8000
+  memory_access:
+    type: array
+    items:
+      type: string
+      enum:
+        - project-context
+        - architecture-decisions
+        - business-rules
+        - coding-standards
+        - glossary
+        - current-sprint
+        - open-issues
+        - completed-tasks
+  memory_write:
+    type: array
+    items:
+      type: string
+  tools:
+    type: array
+    items:
+      type: string
+      enum:
+        - read-file
+        - write-file
+        - edit-file
+        - list-directory
+        - regex-search
+        - git-commit
+        - create-pr
+        - run-tests
+        - lint-code
+        - llm-call
+  timeout_minutes:
+    type: integer
+    minimum: 5
+    maximum: 120
+  review_required:
+    type: boolean

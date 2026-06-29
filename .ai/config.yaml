@@ -1,0 +1,33 @@
+# Global AI Platform Configuration
+# This file defines the top-level settings for the Harness AI Software Company.
+
+platform:
+  name: "Harness AI Software Company"
+  version: "1.0.0"
+  description: "Autonomous multi-agent software development platform"
+
+  default_provider: "openai"
+  default_model: "gpt-4o"
+
+  execution:
+    max_concurrent_agents: 5
+    workflow_timeout_seconds: 3600
+    agent_timeout_seconds: 600
+    retry_attempts: 3
+    retry_delay_seconds: 30
+
+  memory:
+    store_type: "git-backed-filesystem"
+    base_path: ".ai/memory"
+    auto_commit: true
+    conflict_resolution: "last-writer-wins"
+
+  logging:
+    level: "info"
+    format: "json"
+    output: "console"
+
+  security:
+    secret_scanning: true
+    require_review_for: ["config.yaml", "routing.yaml", "schemas/*"]
+    audit_log: true

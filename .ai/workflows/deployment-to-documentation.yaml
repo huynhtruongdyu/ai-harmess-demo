@@ -1,0 +1,90 @@
+name: deployment-to-documentation
+description: "Updates all documentation to reflect newly deployed features and changes"
+version: 1.0.0
+
+trigger:
+  event: deployment.complete
+  artifact: .ai/memory/current/deployment_log.md
+
+steps:
+  - id: gather_changes
+    agent: documentation-writer
+    action: gather_deployment_changes
+    input: .ai/memory/current/deployment_log.md
+    output: changes_summary.md
+    prompt_template: |
+      Review the deployment log and associated PRs to identify all changes
+      that need documentation updates. Categorize as:
+      - New features (need user guide)
+      - API changes (need API doc update)
+      - Configuration changes (need runbook update)
+      - Bug fixes (need changelog entry)
+
+  - id: update_changelog
+    agent: documentation-writer
+    action: write_changelog
+    input: changes_summary.md
+    output: changelog_update.md
+    template: .ai/templates/release/changelog.md
+    constraints:
+      - Follow Keep a Changelog format
+      - Include PR references and issue numbers
+      - Categorize: Added, Changed, Fixed, Deprecated, Security
+
+  - id: update_api_docs
+    agent: documentation-writer
+    action: update_api_documentation
+    input: changes_summary.md
+    output: api_docs_update.md
+    constraints:
+      - Every new/updated endpoint documented
+      - OpenAPI spec regenerated if changed
+      - Examples updated for changed responses
+
+  - id: update_user_guides
+    agent: documentation-writer
+    action: update_user_guides
+    input: changes_summary.md
+    output: user_guide_update.md
+    constraints:
+      - New features have step-by-step guides
+      - Screenshots updated
+      - Troubleshooting sections updated
+
+  - id: update_runbooks
+    agent: documentation-writer
+    action: update_runbooks
+    input: changes_summary.md
+    output: runbook_update.md
+    constraints:
+      - Deployment procedures updated
+      - Monitoring dashboards referenced
+      - Rollback procedures current
+
+  - id: review_docs
+    agent: tech-lead
+    action: review_documentation
+    input:
+      - changelog_update.md
+      - api_docs_update.md
+      - user_guide_update.md
+      - runbook_update.md
+    output: docs_reviewed.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - All changes accurately described
+      - No technical inaccuracies
+      - Links valid
+
+  - id: publish_docs
+    agent: documentation-writer
+    action: publish_documentation
+    input: docs_reviewed.md
+    output: .ai/memory/current/docs-published.md
+
+error_handling:
+  - if: docs_incomplete
+    action: flag_gaps
+    to: documentation-writer
+    message: "Documentation gaps identified. Create follow-up tasks."

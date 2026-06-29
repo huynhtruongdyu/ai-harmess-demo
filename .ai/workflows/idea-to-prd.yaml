@@ -1,0 +1,62 @@
+name: idea-to-prd
+description: "Transforms a high-level idea into a formal Product Requirements Document"
+version: 1.0.0
+
+trigger:
+  event: new_idea
+  artifact: .ai/memory/current/idea.md
+
+steps:
+  - id: refine_idea
+    agent: ceo
+    action: refine_idea
+    input: idea.md
+    output: refined_idea.md
+    prompt_template: |
+      Review the following idea and refine it into a clear, scoped initiative.
+      Include: problem statement, target users, expected business impact, and success metrics.
+
+  - id: assign_pm
+    agent: system
+    action: assign_task
+    target_agent: product-manager
+    input: refined_idea.md
+    output: assignment.md
+
+  - id: create_prd
+    agent: product-manager
+    action: write_prd
+    input: refined_idea.md
+    output: prd_draft.md
+    template: .ai/templates/prd/template.md
+    constraints:
+      - Must include success metrics
+      - Must include out-of-scope section
+      - Must reference relevant OKRs
+
+  - id: review_prd
+    agent: ceo
+    action: review_prd
+    input: prd_draft.md
+    output: prd_review.md
+    gate:
+      requires_approval: true
+      approval_criteria:
+      - Strategic alignment confirmed
+      - Success metrics are measurable
+      - Resource estimates included
+
+  - id: finalize_prd
+    agent: product-manager
+    action: finalize_prd
+    input: prd_review.md
+    output: .ai/memory/current/prd.md
+
+error_handling:
+  - if: prd_rejected
+    action: return_to_idea
+    message: "PRD rejected by CEO. Review strategic alignment and resubmit."
+  - if: timeout > 3600
+    action: escalate
+    to: human
+    message: "Idea-to-PRD workflow exceeded 1 hour."
