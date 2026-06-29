@@ -89,19 +89,32 @@ public class RunCommand : Command
                     loggerFactory.CreateLogger<WorkflowEngine>());
 
                 Console.WriteLine($"\nExecuting workflow: {workflow}...\n");
-                var result = await engine.ExecuteAsync(workflow, inputDict);
 
-                Console.WriteLine($"Status: {result.Status}");
-                Console.WriteLine($"Steps: {result.Steps.Count}");
+                var currentStepIndex = 0;
+                var result = await engine.ExecuteAsync(workflow, inputDict,
+                    onStepProgress: p =>
+                    {
+                        var label = $"[{p.StepIndex}/{p.TotalSteps}] {p.StepId} → {p.Agent}.{p.Action}";
+                        var gate = p.RequiresApproval ? " ⚠ Gate: approval required" : "";
 
-                foreach (var step in result.Steps)
-                {
-                    var icon = step.Success ? "✓" : "✗";
-                    Console.WriteLine($"  {icon} [{step.StepId}] {step.Agent} — {step.Status} ({step.Duration.TotalSeconds:F1}s)");
-                }
+                        if (p.Status == StepStatus.Running)
+                        {
+                            if (p.StepIndex == currentStepIndex)
+                                Console.Write($"\r  {label} ... (running){gate}");
+                            else
+                                Console.WriteLine($"\r  {label} ... (running){gate}");
+                            currentStepIndex = p.StepIndex;
+                        }
+                        else
+                        {
+                            var icon = p.Status == StepStatus.Completed || p.Status == StepStatus.Skipped ? "✓" : "✗";
+                            var duration = p.Duration?.TotalSeconds is double s ? $" ({s:F1}s)" : "";
+                            var error = p.Error != null ? $" — {p.Error}" : "";
+                            Console.WriteLine($"\r  {icon} {label}{duration}{gate}{error}");
+                        }
+                    });
 
-                if (result.Error != null)
-                    Console.WriteLine($"\nError: {result.Error}");
+                Console.WriteLine($"\nStatus: {result.Status}");
             }
             catch (Exception ex)
             {

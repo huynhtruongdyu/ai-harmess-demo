@@ -29,7 +29,8 @@ public class WorkflowEngine
     public async Task<WorkflowRun> ExecuteAsync(
         string workflowName,
         Dictionary<string, string>? inputs = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Action<WorkflowStepProgress>? onStepProgress = null)
     {
         var definition = _configLoader.LoadWorkflow(workflowName);
         var runId = $"wf-{workflowName}-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
@@ -44,16 +45,28 @@ public class WorkflowEngine
         try
         {
             var results = new List<WorkflowStepResult>();
+            var totalSteps = definition.Steps.Count;
 
-            foreach (var step in definition.Steps)
+            for (var i = 0; i < totalSteps; i++)
             {
                 ct.ThrowIfCancellationRequested();
 
+                var step = definition.Steps[i];
+
                 _logger.LogInformation("Executing step {StepId} with agent {Agent}", step.Id, step.Agent);
+
+                onStepProgress?.Invoke(new WorkflowStepProgress(
+                    i + 1, totalSteps, step.Id, step.Agent, step.Action,
+                    StepStatus.Running, null, null, step.Gate?.RequiresApproval == true));
 
                 var stepResult = await ExecuteStepAsync(step, runId, inputs, ct);
                 results.Add(stepResult);
                 _runtimeStore.SaveRun(run with { Steps = results.AsReadOnly() });
+
+                onStepProgress?.Invoke(new WorkflowStepProgress(
+                    i + 1, totalSteps, step.Id, step.Agent, step.Action,
+                    stepResult.Status, stepResult.Duration, stepResult.Error,
+                    step.Gate?.RequiresApproval == true));
 
                 if (stepResult.Status == StepStatus.Rejected)
                 {
@@ -223,3 +236,15 @@ public enum StepStatus
     Skipped,
     Failed
 }
+
+public record WorkflowStepProgress(
+    int StepIndex,
+    int TotalSteps,
+    string StepId,
+    string Agent,
+    string Action,
+    StepStatus Status,
+    TimeSpan? Duration,
+    string? Error,
+    bool RequiresApproval
+);
