@@ -38,6 +38,7 @@ packages/
 logs/
 
 # AI generated artifacts (ephemeral)
+.ai/_runtime/
 .ai/memory/_cache/
 .ai/memory/_archive/
 

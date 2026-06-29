@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="AiCompany.Cli/AiCompany.Cli.csproj" />
+  <Project Path="AiCompany.Core/AiCompany.Core.csproj" />
+  <Project Path="AiCompany.Integrations/AiCompany.Integrations.csproj" />
+  <Project Path="AiCompany.Tests.E2E/AiCompany.Tests.E2E.csproj" />
+  <Project Path="AiCompany.Tests.Integration/AiCompany.Tests.Integration.csproj" />
+  <Project Path="AiCompany.Tests.Unit/AiCompany.Tests.Unit.csproj" />
+</Solution>

@@ -31,3 +31,8 @@ platform:
     secret_scanning: true
     require_review_for: ["config.yaml", "routing.yaml", "schemas/*"]
     audit_log: true
+
+providers:
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    endpoint: "https://api.openai.com/v1"
